@@ -18,7 +18,7 @@ import SearchScreen from './src/assets/screens/SearchScreen';
 import HeroHeader from './src/HeroHeader/HeroHeader';
 import MinhaContaScreen from './src/assets/screens/MinhaConta';
 import OfertasScreen from './src/assets/screens/OfertasScreen';
-import DadosPessoaisScreen from './src/assets/screens/ScreensCategorias/DadosPessoaisScreen';
+import DadosPessoaisScreen from './src/assets/screens/ScreensMinhaConta/DadosPessoaisScreen';
 import EnderecosScreen from './src/assets/screens/ScreensMinhaConta/EnderecoScreen';
 import PedidosScreen from './src/assets/screens/ScreensMinhaConta/PedidosScreen';
 import CartoesScreen from './src/assets/screens/ScreensMinhaConta/CartoesScreen';

@@ -1,38 +1,53 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const cartoes = [
   {
     id: '1',
     bandeira: 'VISA',
     numero: '**** 0883',
-    vencimento: '7/2026',
-    logo: 'https://example.com/visa.png', // Substitua pelo link correto
+    vencimento: '07/2026',
+    logo: 'https://example.com/visa.png',
   },
   {
     id: '2',
     bandeira: 'VISA',
     numero: '**** 0789',
-    vencimento: '7/2020',
-    logo: 'https://example.com/visa.png', // Substitua pelo link correto
+    vencimento: '07/2020',
+    logo: 'https://example.com/visa.png',
   },
   {
     id: '3',
     bandeira: 'MASTER',
     numero: '**** 0688',
-    vencimento: '7/2027',
-    logo: 'https://example.com/mastercard.png', // Substitua pelo link correto
+    vencimento: '07/2027',
+    logo: 'https://example.com/mastercard.png',
   },
 ];
 
-// Renderiza cada cartão
+const getBandeiraIcon = (bandeira) => {
+  switch (bandeira.toUpperCase()) {
+    case 'VISA':
+      return <FontAwesome name="cc-visa" size={18} color="#1a1f71" style={styles.bandeiraIcon} />;
+    case 'MASTER':
+    case 'MASTERCARD':
+      return <FontAwesome name="cc-mastercard" size={18} color="#eb001b" style={styles.bandeiraIcon} />;
+    default:
+      return <Icon name="credit-card" size={18} color="#555" style={styles.bandeiraIcon} />;
+  }
+};
+
 const renderCartaoItem = ({ item }) => (
   <View style={styles.card}>
     <Image source={{ uri: item.logo }} style={styles.image} />
     <View style={styles.cardContent}>
       <Text style={styles.numero}>{item.numero}</Text>
-      <Text style={styles.bandeira}>{item.bandeira}</Text>
+      <View style={styles.bandeiraRow}>
+        {getBandeiraIcon(item.bandeira)}
+        <Text style={styles.bandeira}>{item.bandeira}</Text>
+      </View>
       <Text style={styles.vencimento}>Vencimento {item.vencimento}</Text>
     </View>
     <TouchableOpacity style={styles.deleteButton}>
@@ -96,10 +111,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
+  bandeiraRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 2,
+  },
+  bandeiraIcon: {
+    marginRight: 6,
+  },
   bandeira: {
     fontSize: 14,
     color: '#777',
-    marginVertical: 2,
   },
   vencimento: {
     fontSize: 12,

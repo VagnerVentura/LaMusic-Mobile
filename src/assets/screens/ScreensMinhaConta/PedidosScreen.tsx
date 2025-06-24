@@ -1,42 +1,95 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  SafeAreaView,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { RootDrawerParamList } from './../../components/types'; // certifique-se que esse tipo inclui 'DetalhesPedido'
+
+type NavigationProps = DrawerNavigationProp<RootDrawerParamList, 'Pedidos'>;
 
 const pedidos = [
   {
     id: '1',
+    numero: 'LMK20240828',
     data: '28 de Agosto',
     status: 'Entregue',
     entrega: 'Chegou no dia 29/08',
     descricao: 'Violão Clássico',
-    imagem: 'https://example.com/violao.png', // Substitua por um link válido
+    quantidade: 1,
+    valor: 'R$ 799,00',
+    pagamento: 'Cartão de Crédito',
+    imagem: require('../../img/cordas/violao1.png'),
   },
   {
     id: '2',
+    numero: 'LMK20240728',
     data: '28 de Julho',
-    status: 'Entregue',
-    entrega: 'Chegou no dia 29/07',
+    status: 'Cancelado',
+    entrega: '-',
     descricao: 'Teclado Arranjador X30',
-    imagem: 'https://example.com/teclado.png', // Substitua por um link válido
+    quantidade: 1,
+    valor: 'R$ 1.299,00',
+    pagamento: 'Pix',
+    imagem: require('../../img/teclas/piano1.png'),
   },
 ];
 
-// Renderiza cada item do pedido
-const renderPedidoItem = ({ item }) => (
-  <View style={styles.card}>
-    <Image source={{ uri: item.imagem }} style={styles.image} />
-    <View style={styles.cardContent}>
-      <Text style={styles.data}>{item.data}</Text>
-      <Text style={styles.status}>{item.status}</Text>
-      <Text style={styles.entrega}>{item.entrega}</Text>
-      <Text style={styles.descricao}>{item.descricao}</Text>
-    </View>
-  </View>
-);
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Entregue':
+      return '#2e7d32';
+    case 'Cancelado':
+      return '#d32f2f';
+    case 'Em transporte':
+      return '#f9a825';
+    default:
+      return '#757575';
+  }
+};
 
 const PedidosScreen = () => {
+  const navigation = useNavigation<NavigationProps>();
+
+  const renderPedidoItem = ({ item }) => (
+    <View style={styles.card}>
+      <Image source={item.imagem} style={styles.image} />
+      <View style={styles.cardContent}>
+        <View style={styles.row}>
+          <Text style={styles.numero}>Pedido #{item.numero}</Text>
+          <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
+            {item.status}
+          </Text>
+        </View>
+
+        <Text style={styles.descricao}>{item.descricao}</Text>
+        <Text style={styles.info}>Quantidade: {item.quantidade}</Text>
+        <Text style={styles.info}>Valor: {item.valor}</Text>
+        <Text style={styles.info}>Forma de Pagamento: {item.pagamento}</Text>
+        <Text style={styles.info}>Enviado em: {item.data}</Text>
+        {item.status === 'Entregue' && (
+          <Text style={styles.entrega}>{item.entrega}</Text>
+        )}
+
+        <TouchableOpacity
+          style={styles.detalhesButton}
+          onPress={() => navigation.navigate('DetalhesPedido', { pedido: item })}
+        >
+          <Text style={styles.detalhesText}>Ver Detalhes</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Pedidos</Text>
+      <Text style={styles.title}>Meus Pedidos</Text>
       <FlatList
         data={pedidos}
         keyExtractor={(item) => item.id}
@@ -50,13 +103,13 @@ const PedidosScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F9F9F9',
     paddingHorizontal: 15,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#2E7D32',
     marginVertical: 20,
   },
   list: {
@@ -64,42 +117,65 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
     marginBottom: 15,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 2,
   },
   image: {
     width: 80,
     height: 80,
     borderRadius: 8,
-    marginRight: 10,
+    marginRight: 12,
   },
   cardContent: {
     flex: 1,
   },
-  data: {
-    fontSize: 16,
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  numero: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
   },
   status: {
     fontSize: 14,
-    color: '#28a745', // Verde para status entregue
-    marginVertical: 2,
-  },
-  entrega: {
-    fontSize: 12,
-    color: '#777',
+    fontWeight: 'bold',
   },
   descricao: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: '#444',
+  },
+  info: {
+    fontSize: 13,
     color: '#555',
+  },
+  entrega: {
+    fontSize: 13,
+    color: '#555',
+    marginTop: 4,
+  },
+  detalhesButton: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    backgroundColor: '#2E7D32',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  detalhesText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
 

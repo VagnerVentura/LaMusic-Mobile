@@ -7,7 +7,7 @@ import MyDrawer from './DrawerNavigator';
 import Main from './src/Main/Main';
 import Header from './src/Header/Header';
 import HeroHeader from './src/Header/Header';
-import { UserProvider } from './UserContext';
+import { UserProvider } from './src/assets/components/UserContext';
 
 function HomeScreen({ navigation }) {
   return (

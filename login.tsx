@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 // import api from './api'; 
-import { UserContext } from './UserContext'; 
+import { UserContext } from './src/assets/components/UserContext'; 
 import { api } from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -14,7 +14,7 @@ const LoginScreen = ({ navigation }) => {
   console.log("Dados enviados: ", { email, password: senha }); 
 
   try {
-    const response = await api.post('http://192.168.1.104:8080/auth/login', {
+    const response = await api.post('/auth/login', {
       email,
       password: senha, 
     });
@@ -26,6 +26,7 @@ const LoginScreen = ({ navigation }) => {
     if (token) {
       Alert.alert('Sucesso', 'Login realizado com sucesso!');
        await AsyncStorage.setItem('token', token);
+       await AsyncStorage.setItem('email', email);
       setUser({ email, token });
       navigation.navigate('Minha Conta', { token });
     } else {
