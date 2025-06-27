@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -7,67 +7,99 @@ import {
   TouchableOpacity,
   Image,
   SafeAreaView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import api from '../../../api';
+import { UserContext } from '../components/UserContext';
 
-const produtosCarrinho = [
-  { id: '1', nome: 'Guitarra', preco: 200, imageUrl: require('../img/cordas/guitarra1.jpg') },
-  { id: '2', nome: 'Violão', preco: 300, imageUrl: require('../img/cordas/violao1.png') },
-  { id: '3', nome: 'Violão', preco: 300, imageUrl: require('../img/cordas/violao1.png') },
-];
-
-const formatarPreco = (preco) => `R$${preco.toFixed(2).replace('.', ',')}`;
+const BASE_URL = 'http://192.168.1.105:8080';
 
 export default function CarrinhoScreen({ navigation }) {
-  const [produtos, setProdutos] = useState(produtosCarrinho);
+  const [produtos, setProdutos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useContext(UserContext);
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const response = await api.get('/cart');
+        const items = response.data.items || [];
+        const produtosFormatados = items.map((item) => ({
+          id: item.id,
+          nome: item.product.name,
+          preco: item.price,
+          quantidade: item.quantity,
+          imageUrl: `${BASE_URL}${item.product.images?.[0]?.imageUrl || '/placeholder.jpg'}`,
+        }));
+        setProdutos(produtosFormatados);
+      } catch (error) {
+        console.error('Erro ao buscar carrinho:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
+  const formatarPreco = (preco) => `R$${preco.toFixed(2).replace('.', ',')}`;
 
   const calcularTotal = () => {
-    return produtos.reduce((total, item) => total + item.preco, 0);
+    return produtos.reduce((total, item) => total + item.preco * item.quantidade, 0);
   };
 
-  const removerItem = (id) => {
-    const index = produtos.findIndex((item) => item.id === id);
-    if (index !== -1) {
-      const novaLista = [...produtos];
-      novaLista.splice(index, 1);
-      setProdutos(novaLista);
+  const removerItem = async (itemId) => {
+    try {
+      await api.delete(`/cart/items/${itemId}`);
+      setProdutos((prev) => prev.filter((item) => item.id !== itemId));
+    } catch (error) {
+      console.error('Erro ao remover item:', error);
     }
   };
 
-  const renderItem = ({ item }) => {
-    const quantidade = produtos.filter((p) => p.id === item.id).length;
-
-    const icone =
-      item.nome.toLowerCase().includes('guitarra')
-        ? 'guitar'
-        : item.nome.toLowerCase().includes('violão')
-          ? 'music-note'
-          : 'headphones';
-
-    return (
-      <View style={styles.itemContainer}>
-        <View style={styles.imageContainer}>
-          <Image source={item.imageUrl} style={styles.image} />
-          {quantidade > 1 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>×{quantidade}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.nome}>{item.nome}</Text>
-          <Text style={styles.preco}>{formatarPreco(item.preco)}</Text>
-        </View>
-
-        {/* <MaterialIcons name={icone} size={22} color="#3d572f" style={{ marginRight: 8 }} /> */}
-
-        <TouchableOpacity onPress={() => removerItem(item.id)} style={styles.deleteButton}>
-          <MaterialIcons name="delete" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    );
+  const finalizarCompra = async () => {
+    try {
+      const response = await api.post('/cart/checkout');
+      Alert.alert('Sucesso', 'Compra finalizada com sucesso!');
+      setProdutos([]); // limpa o carrinho
+      navigation.navigate('Menu');
+    } catch (error) {
+      console.error('Erro ao finalizar compra:', error);
+      Alert.alert('Erro', 'Não foi possível finalizar a compra.');
+    }
   };
+
+  const renderItem = ({ item }) => (
+    <View style={styles.itemContainer}>
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: item.imageUrl }} style={styles.image} />
+        {item.quantidade > 1 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>×{item.quantidade}</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.infoContainer}>
+        <Text style={styles.nome}>{item.nome}</Text>
+        <Text style={styles.preco}>{formatarPreco(item.preco)}</Text>
+      </View>
+
+      <TouchableOpacity onPress={() => removerItem(item.id)} style={styles.deleteButton}>
+        <MaterialIcons name="delete" size={24} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#3d572f" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -79,25 +111,28 @@ export default function CarrinhoScreen({ navigation }) {
         renderItem={renderItem}
         contentContainerStyle={styles.listaCarrinho}
       />
+
       <View style={styles.resumoContainer}>
         <Text style={styles.totalText}>Total: {formatarPreco(calcularTotal())}</Text>
 
         <TouchableOpacity
           style={styles.btnFinalizar}
-          onPress={() => navigation.navigate('Pagamento', { total: calcularTotal() })}
+          onPress={() => {
+            const total = calcularTotal();
+            navigation.navigate('SelecionarEndereco', { total });
+          }}
         >
           <Text style={styles.btnFinalizarText}>Finalizar Compra</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.btnVoltar}
-          onPress={() => navigation.navigate('Menu')} // Altere para a rota que representa seu catálogo/tab principal
+          onPress={() => navigation.navigate('Menu')}
         >
           <MaterialIcons name="arrow-back" size={20} color="#3d572f" />
           <Text style={styles.textoVoltar}>Continuar Comprando</Text>
         </TouchableOpacity>
       </View>
-
     </SafeAreaView>
   );
 }
@@ -111,9 +146,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
   },
-  listaCarrinho: {
-    paddingBottom: 20,
-  },
+  listaCarrinho: { paddingBottom: 20 },
   itemContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -126,9 +159,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     alignItems: 'center',
   },
-  imageContainer: {
-    position: 'relative',
-  },
+  imageContainer: { position: 'relative' },
   image: {
     width: 70,
     height: 70,
@@ -144,29 +175,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  infoContainer: {
-    flex: 1,
-  },
-  nome: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  preco: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  deleteButton: {
-    backgroundColor: '#ff4444',
-    borderRadius: 6,
-    padding: 6,
-  },
+  badgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  infoContainer: { flex: 1 },
+  nome: { fontSize: 16, fontWeight: '600', color: '#333' },
+  preco: { fontSize: 14, color: '#666', marginTop: 4 },
+  deleteButton: { backgroundColor: '#ff4444', borderRadius: 6, padding: 6 },
   resumoContainer: {
     padding: 20,
     backgroundColor: '#f1f8e9',
@@ -188,11 +201,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  btnFinalizarText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  btnFinalizarText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   btnVoltar: {
     marginTop: 12,
     flexDirection: 'row',
@@ -206,5 +215,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
   },
-
 });

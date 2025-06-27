@@ -121,11 +121,11 @@ function MyDrawer() {
           drawerItemStyle: { display: 'none' },
         }}
       />
-      <Drawer.Screen
+      {/* <Drawer.Screen
         name="DetalhesPedido"
         component={DetalhesPedidoScreen}
         options={{ drawerItemStyle: { display: 'none' } }}
-      />
+      /> */}
       <Drawer.Screen
         name="Início"
         component={HomeScreen}

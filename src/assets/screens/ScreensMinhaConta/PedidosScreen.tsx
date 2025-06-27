@@ -1,98 +1,69 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  Image,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { DrawerNavigationProp } from '@react-navigation/drawer';
-import { RootDrawerParamList } from './../../components/types'; // certifique-se que esse tipo inclui 'DetalhesPedido'
-
-type NavigationProps = DrawerNavigationProp<RootDrawerParamList, 'Pedidos'>;
-
-const pedidos = [
-  {
-    id: '1',
-    numero: 'LMK20240828',
-    data: '28 de Agosto',
-    status: 'Entregue',
-    entrega: 'Chegou no dia 29/08',
-    descricao: 'Violão Clássico',
-    quantidade: 1,
-    valor: 'R$ 799,00',
-    pagamento: 'Cartão de Crédito',
-    imagem: require('../../img/cordas/violao1.png'),
-  },
-  {
-    id: '2',
-    numero: 'LMK20240728',
-    data: '28 de Julho',
-    status: 'Cancelado',
-    entrega: '-',
-    descricao: 'Teclado Arranjador X30',
-    quantidade: 1,
-    valor: 'R$ 1.299,00',
-    pagamento: 'Pix',
-    imagem: require('../../img/teclas/piano1.png'),
-  },
-];
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Entregue':
-      return '#2e7d32';
-    case 'Cancelado':
-      return '#d32f2f';
-    case 'Em transporte':
-      return '#f9a825';
-    default:
-      return '#757575';
-  }
-};
+import api from '../../../../api';
 
 const PedidosScreen = () => {
-  const navigation = useNavigation<NavigationProps>();
+  const navigation = useNavigation();
+  const [pedidos, setPedidos] = useState([]);
 
-  const renderPedidoItem = ({ item }) => (
-    <View style={styles.card}>
-      <Image source={item.imagem} style={styles.image} />
-      <View style={styles.cardContent}>
-        <View style={styles.row}>
-          <Text style={styles.numero}>Pedido #{item.numero}</Text>
-          <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
-            {item.status}
+  useEffect(() => {
+    api.get('/orders/me')
+      .then(response => setPedidos(response.data))
+      .catch(error => {
+        console.error('Erro ao carregar pedidos:', error);
+        Alert.alert('Erro', 'Não foi possível carregar seus pedidos');
+      });
+  }, []);
+
+  const renderPedidoItem = ({ item }) => {
+    const dataFormatada = item.orderDate
+      ? new Date(item.orderDate).toLocaleDateString('pt-BR')
+      : 'Data não disponível';
+
+    const descricao = item.items.length === 1
+      ? item.items[0].productName
+      : `${item.items[0].productName} + ${item.items.length - 1} itens`;
+
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardContent}>
+          <View style={styles.row}>
+            <Text style={styles.numero}>Pedido #{item.orderId.slice(0, 8)}</Text>
+            <Text style={[styles.status, { color: '#f9a825' }]}>Pendente</Text>
+          </View>
+
+          <Text style={styles.descricao}>{descricao}</Text>
+          <Text style={styles.info}>
+            Total: R$ {Number(item.totalAmount).toFixed(2).replace('.', ',')}
           </Text>
+          <Text style={styles.info}>Data: {dataFormatada}</Text>
+
+          <TouchableOpacity
+            style={styles.detalhesButton}
+            onPress={() => navigation.navigate('DetalhesPedidoScreen', { pedido: item })}
+          >
+            <Text style={styles.detalhesText}>Ver Detalhes</Text>
+          </TouchableOpacity>
         </View>
-
-        <Text style={styles.descricao}>{item.descricao}</Text>
-        <Text style={styles.info}>Quantidade: {item.quantidade}</Text>
-        <Text style={styles.info}>Valor: {item.valor}</Text>
-        <Text style={styles.info}>Forma de Pagamento: {item.pagamento}</Text>
-        <Text style={styles.info}>Enviado em: {item.data}</Text>
-        {item.status === 'Entregue' && (
-          <Text style={styles.entrega}>{item.entrega}</Text>
-        )}
-
-        <TouchableOpacity
-          style={styles.detalhesButton}
-          onPress={() => navigation.navigate('DetalhesPedido', { pedido: item })}
-        >
-          <Text style={styles.detalhesText}>Ver Detalhes</Text>
-        </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Meus Pedidos</Text>
       <FlatList
         data={pedidos}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.orderId}
         renderItem={renderPedidoItem}
         contentContainerStyle={styles.list}
       />
@@ -126,12 +97,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  image: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 12,
-  },
   cardContent: {
     flex: 1,
   },
@@ -158,11 +123,6 @@ const styles = StyleSheet.create({
   info: {
     fontSize: 13,
     color: '#555',
-  },
-  entrega: {
-    fontSize: 13,
-    color: '#555',
-    marginTop: 4,
   },
   detalhesButton: {
     marginTop: 10,

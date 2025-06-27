@@ -10,17 +10,28 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialIcons, FontAwesome5, FontAwesome } from '@expo/vector-icons';
+import api from '../../../api';
+import PedidosScreen from './ScreensMinhaConta/PedidosScreen';
 
 const PagamentoScreen = ({ navigation, route }) => {
   const total = route.params?.total || 0;
   const [metodoSelecionado, setMetodoSelecionado] = useState('Cartão');
 
-  const confirmarPagamento = () => {
-    Alert.alert(
-      'Pagamento Confirmado!',
-      `Método: ${metodoSelecionado}\nValor: R$${total.toFixed(2).replace('.', ',')}`
-    );
-    navigation.popToTop();
+  const confirmarPagamento = async () => {
+    try {
+      const { shippingAddressId, billingAddressId } = route.params;
+
+      await api.post('/orders/checkout', {
+        shippingAddressId,
+        billingAddressId
+      });
+
+      Alert.alert('Sucesso', 'Pedido realizado com sucesso!');
+      navigation.navigate('AgradecimentoScreen'); // ou navegação para tela de pedidos
+    } catch (error) {
+      console.error('Erro ao finalizar pedido:', error);
+      Alert.alert('Erro', 'Não foi possível concluir o pedido. Tente novamente.');
+    }
   };
 
   const renderCamposPagamento = () => {
