@@ -87,22 +87,31 @@ const CategoryScreen = ({ route, navigation }) => {
         numColumns={2}
         renderItem={({ item }) => {
           const imageUrl =
-            item?.images?.length > 0
-              ? `${BASE_URL}${item.images[0].url}`
+            item?.imageUrl
+              ? `${BASE_URL}${item.imageUrl}`
               : 'https://via.placeholder.com/150';
 
           return (
             <View style={styles.itemContainer}>
-              <Image source={{ uri: imageUrl }} style={styles.productImage} />
-              <Text style={styles.nome}>{item.name}</Text>
-              <Text style={styles.preco}>R$ {item.price.toFixed(2)}</Text>
+              {/* Clique na imagem ou nome leva ao detalhe do produto */}
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate('ProductDetail', { product: item })
+                }
+              >
+                <Image source={{ uri: imageUrl }} style={styles.productImage} />
+                <Text style={styles.nome}>{item.name}</Text>
+                <Text style={styles.preco}>R$ {item.price.toFixed(2)}</Text>
+              </TouchableOpacity>
+
+              {/* Botão para adicionar ao carrinho */}
               <CustomButton
                 title="Adicionar ao Carrinho"
                 onPress={() => {
-                  const userId = 'ID_DO_USUARIO'; // troque aqui se necessário
+                  const userId = 'ID_DO_USUARIO'; // Substitua pelo real
                   adicionarAoCarrinho(userId, item.id, 1);
                   setCart([...cart, { ...item, quantity: 1 }]);
-                  Alert.alert("Sucesso", "Produto adicionado ao carrinho!");
+                  Alert.alert('Sucesso', 'Produto adicionado ao carrinho!');
                 }}
               />
             </View>
@@ -118,36 +127,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  itemContainer: {
+    flex: 1,
+    margin: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    elevation: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  productImage: {
+    width: 120,
+    height: 120,
+    resizeMode: 'contain',
+    marginBottom: 10,
+  },
   nome: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginVertical: 10,
     textAlign: 'center',
+    marginBottom: 6,
   },
   preco: {
     fontSize: 16,
     color: '#333',
-    marginVertical: 5,
-  },
-  itemContainer: {
-    flex: 1,
-    margin: 10,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 10,
-    elevation: 2,
-  },
-  productImage: {
-    width: 100,
-    height: 100,
-    resizeMode: 'contain',
+    marginBottom: 8,
   },
   btn: {
     backgroundColor: '#3d572f',
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 5,
-    marginTop: 10,
+    marginTop: 8,
     width: '100%',
     alignItems: 'center',
   },
@@ -157,5 +169,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
 
 export default CategoryScreen;

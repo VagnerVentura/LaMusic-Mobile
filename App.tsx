@@ -1,23 +1,11 @@
+// App.js
 import 'react-native-gesture-handler';
 import React, { useRef } from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import MyDrawer from './DrawerNavigator';
-import Main from './src/Main/Main';
-import Header from './src/Header/Header';
-import HeroHeader from './src/Header/Header';
 import { UserProvider } from './src/assets/components/UserContext';
-
-function HomeScreen({ navigation }) {
-  return (
-    <SafeAreaView style={styles.container}>
-      <Header navigation={navigation} />
-      <HeroHeader navigation={navigation} />
-      <Main />
-    </SafeAreaView>
-  );
-}
+import AppNavigator from './Navigation'; // 👈 Novo import
 
 const App = () => {
   const drawerNavigationRef = useRef(null);
@@ -26,7 +14,7 @@ const App = () => {
     <UserProvider>
       <SafeAreaProvider>
         <NavigationContainer ref={drawerNavigationRef}>
-          <MyDrawer />
+          <AppNavigator /> {/* 👈 Agora navega com Stack + Drawer */}
         </NavigationContainer>
       </SafeAreaProvider>
     </UserProvider>

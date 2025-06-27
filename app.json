@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "d8caa3d2-1af6-47ed-84e8-ed7641c71750"
+      }
+    },
+    "android": {
+      "package": "com.vagnerventura.lojadeinstrumentos"
+    }
+  }
+}

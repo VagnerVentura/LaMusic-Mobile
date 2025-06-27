@@ -19,6 +19,7 @@ import CadastroScreen from './CadastroScreen';
 import MyTabs from './TabNavigator';
 import HomeScreen from './src/assets/screens/SearchScreen';
 import LoginRedirect from './src/assets/components/LoginRedirect';
+import ProductDetailScreen from './src/assets/screens/ProductDetailScreen';
 import DetalhesPedidoScreen from './src/assets/screens/ScreensMinhaConta/DetalhesPedidoScreen';
 import { RootDrawerParamList } from './src/assets/components/types'
 

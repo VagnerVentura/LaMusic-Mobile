@@ -18,6 +18,7 @@ function DadosPessoaisScreen({ navigation }) {
   const fetchUserData = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
+      console.log('Token recuperado:', token);
       const response = await api.get('/client/me', {
         headers: {
           Authorization: `Bearer ${token}`,
