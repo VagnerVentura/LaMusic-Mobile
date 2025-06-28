@@ -1,8 +1,19 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, Animated, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
-import axios from 'axios';
+import React, { useEffect, useState, useRef, useContext } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Image,
+  Animated,
+  TouchableOpacity,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
 import Header from './src/Header/Header';
 import HeroHeader from './src/HeroHeader/HeroHeader';
+import { UserContext } from './src/assets/components/UserContext';
+import api from './api';
 
 const CustomButton = ({ title, onPress }) => {
   const colorValue = useRef(new Animated.Value(0)).current;
@@ -42,36 +53,37 @@ const CategoryScreen = ({ route, navigation }) => {
   const { categoryId, categoryName } = route.params;
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
-  const BASE_URL = 'http://192.168.1.105:8080'; // Ajuste se necessário
+  const BASE_URL = 'http://192.168.1.105:8080'; // Altere conforme necessário
+
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/categories/${categoryId}/products`);
+        const response = await api.get(`/categories/${categoryId}/products`);
         console.log('Produtos carregados:', JSON.stringify(response.data, null, 2));
-
-        // Se a API retorna diretamente a lista:
         setProducts(response.data);
-        // Se a API retorna { products: [...] }, use:
-        // setProducts(response.data.products || []);
       } catch (error) {
         console.error('Erro ao buscar produtos:', error);
+        Alert.alert('Erro', 'Não foi possível carregar os produtos.');
       }
     };
 
     fetchProducts();
   }, [categoryId]);
 
-  const adicionarAoCarrinho = async (userId, productId, quantity) => {
+  const adicionarAoCarrinho = async (productId, quantity) => {
     try {
-      const response = await axios.post(`${BASE_URL}/cart/add`, {
-        userId,
+      await api.post('/cart/items', {
         productId,
         quantity,
       });
-      console.log('Produto adicionado ao carrinho:', response.data);
+
+      setCart((prevCart) => [...prevCart, { productId, quantity }]);
+      Alert.alert('Sucesso', 'Produto adicionado ao carrinho!');
     } catch (error) {
-      console.error('Erro ao adicionar ao carrinho:', error);
+      console.error('Erro ao adicionar ao carrinho:', error.response?.data || error.message);
+      Alert.alert('Erro', 'Não foi possível adicionar ao carrinho.');
     }
   };
 
@@ -85,34 +97,23 @@ const CategoryScreen = ({ route, navigation }) => {
         data={products}
         keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
         numColumns={2}
+        contentContainerStyle={{ paddingBottom: 20 }}
         renderItem={({ item }) => {
-          const imageUrl =
-            item?.imageUrl
-              ? `${BASE_URL}${item.imageUrl}`
-              : 'https://via.placeholder.com/150';
+          const imageUrl = item?.imageUrl
+            ? `${BASE_URL}${item.imageUrl}`
+            : 'https://via.placeholder.com/150';
 
           return (
             <View style={styles.itemContainer}>
-              {/* Clique na imagem ou nome leva ao detalhe do produto */}
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate('ProductDetail', { product: item })
-                }
-              >
+              <TouchableOpacity onPress={() => navigation.navigate('ProductDetail', { product: item })}>
                 <Image source={{ uri: imageUrl }} style={styles.productImage} />
                 <Text style={styles.nome}>{item.name}</Text>
                 <Text style={styles.preco}>R$ {item.price.toFixed(2)}</Text>
               </TouchableOpacity>
 
-              {/* Botão para adicionar ao carrinho */}
               <CustomButton
                 title="Adicionar ao Carrinho"
-                onPress={() => {
-                  const userId = 'ID_DO_USUARIO'; // Substitua pelo real
-                  adicionarAoCarrinho(userId, item.id, 1);
-                  setCart([...cart, { ...item, quantity: 1 }]);
-                  Alert.alert('Sucesso', 'Produto adicionado ao carrinho!');
-                }}
+                onPress={() => adicionarAoCarrinho(item.id, 1)}
               />
             </View>
           );
@@ -169,6 +170,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-
 export default CategoryScreen;
